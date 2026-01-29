@@ -1,0 +1,8 @@
+# Projet d'Analyse Métier - Dépendances Python
+
+# Aucune dépendance externe requise pour ce projet
+# SQLite est inclus dans la bibliothèque standard Python
+
+# Pour le développement et les tests (optionnel)
+# pytest==7.4.3
+# black==23.12.1
