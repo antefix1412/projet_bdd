@@ -1,447 +1,501 @@
 """
-Interface graphique avec tkinter
-Application de gestion des ventes
+Interface graphique avec PySide6
+Application de gestion de réservations d'espaces
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+import sys
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QPushButton, QTextEdit, QLabel, QDialog, QLineEdit, QMessageBox,
+    QFrame, QComboBox
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 import service
 import database
 import os
 
 
-class Application(tk.Tk):
-    """Application principale avec interface tkinter"""
+class Application(QMainWindow):
+    """Application principale avec interface PySide6"""
     
     def __init__(self):
         super().__init__()
         
-        # Vérifier et initialiser la base si nécessaire
-        if not os.path.exists(database.DB_PATH):
-            database.init_database()
-            database.populate_sample_data()
+        # Initialiser la base avec des données de test au démarrage
+        database.init_database()
+        database.populate_sample_data()
         
         # Configuration de la fenêtre principale
-        self.title("Application de Gestion des Ventes")
-        self.geometry("1000x700")
-        self.configure(bg='#f0f0f0')
+        self.setWindowTitle("Gestion de Réservations d'Espaces")
+        self.setGeometry(100, 100, 1200, 700)
+        
+        # Widget central
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
         
         # Créer les widgets
-        self.create_widgets()
+        self.create_widgets(central_widget)
     
-    def create_widgets(self):
+    def create_widgets(self, central_widget):
         """Crée tous les widgets de l'interface"""
         
-        # Titre
-        title_frame = tk.Frame(self, bg='#2c3e50', height=80)
-        title_frame.pack(fill='x', pady=(0, 10))
+        # Layout principal vertical
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        title_label = tk.Label(
-            title_frame,
-            text="📊 APPLICATION DE GESTION DES VENTES",
-            font=('Arial', 20, 'bold'),
-            bg='#2c3e50',
-            fg='white'
-        )
-        title_label.pack(pady=20)
+        # Titre
+        title_widget = QWidget()
+        title_widget.setStyleSheet("background-color: #2c3e50;")
+        title_widget.setFixedHeight(80)
+        title_layout = QVBoxLayout(title_widget)
+        
+        title_label = QLabel("🏢 GESTION DE RÉSERVATIONS D'ESPACES")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setFont(QFont("Arial", 20, QFont.Bold))
+        title_label.setStyleSheet("color: white;")
+        title_layout.addWidget(title_label)
+        
+        main_layout.addWidget(title_widget)
         
         # Frame principal avec 2 colonnes
-        main_frame = tk.Frame(self, bg='#f0f0f0')
-        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        content_widget = QWidget()
+        content_layout = QHBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
         
         # Colonne gauche - Boutons
-        left_frame = tk.Frame(main_frame, bg='#f0f0f0', width=250)
-        left_frame.pack(side='left', fill='y', padx=(0, 10))
+        left_widget = QWidget()
+        left_widget.setFixedWidth(300)
+        left_layout = QVBoxLayout(left_widget)
         
         # Titre des actions
-        tk.Label(
-            left_frame,
-            text="ACTIONS",
-            font=('Arial', 12, 'bold'),
-            bg='#f0f0f0'
-        ).pack(pady=(0, 10))
+        actions_label = QLabel("ACTIONS")
+        actions_label.setAlignment(Qt.AlignCenter)
+        actions_label.setFont(QFont("Arial", 12, QFont.Bold))
+        left_layout.addWidget(actions_label)
+        
+        # Style de base pour les boutons
+        base_style = """
+            QPushButton {
+                font-size: 11pt;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                color: white;
+                text-align: left;
+            }
+            QPushButton:hover {
+                opacity: 0.9;
+            }
+        """
         
         # Boutons d'action
-        btn_style = {
-            'font': ('Arial', 11),
-            'width': 25,
-            'height': 2,
-            'bg': '#3498db',
-            'fg': 'white',
-            'activebackground': '#2980b9',
-            'cursor': 'hand2',
-            'relief': 'flat'
-        }
+        btn_reservations = QPushButton("📋 Voir les réservations")
+        btn_reservations.setStyleSheet(base_style + "QPushButton { background-color: #3498db; }")
+        btn_reservations.clicked.connect(self.afficher_reservations)
+        left_layout.addWidget(btn_reservations)
         
-        tk.Button(
-            left_frame,
-            text="📋 Voir les ventes",
-            command=self.afficher_ventes,
-            **btn_style
-        ).pack(pady=5)
+        btn_indicateurs = QPushButton("💰 Indicateurs globaux")
+        btn_indicateurs.setStyleSheet(base_style + "QPushButton { background-color: #3498db; }")
+        btn_indicateurs.clicked.connect(self.afficher_indicateurs)
+        left_layout.addWidget(btn_indicateurs)
         
-        tk.Button(
-            left_frame,
-            text="💰 Indicateurs globaux",
-            command=self.afficher_indicateurs,
-            **btn_style
-        ).pack(pady=5)
+        btn_espaces = QPushButton("🏆 Espaces les plus demandés")
+        btn_espaces.setStyleSheet(base_style + "QPushButton { background-color: #3498db; }")
+        btn_espaces.clicked.connect(self.afficher_espaces_demandes)
+        left_layout.addWidget(btn_espaces)
         
-        tk.Button(
-            left_frame,
-            text="🏆 Classement produits",
-            command=self.afficher_classement_produits,
-            **btn_style
-        ).pack(pady=5)
+        btn_clients = QPushButton("👥 Meilleurs clients")
+        btn_clients.setStyleSheet(base_style + "QPushButton { background-color: #3498db; }")
+        btn_clients.clicked.connect(self.afficher_meilleurs_clients)
+        left_layout.addWidget(btn_clients)
         
-        tk.Button(
-            left_frame,
-            text="👥 Classement clients",
-            command=self.afficher_classement_clients,
-            **btn_style
-        ).pack(pady=5)
+        btn_periode = QPushButton("📊 Volume par période")
+        btn_periode.setStyleSheet(base_style + "QPushButton { background-color: #3498db; }")
+        btn_periode.clicked.connect(self.afficher_volume_periode)
+        left_layout.addWidget(btn_periode)
         
-        tk.Button(
-            left_frame,
-            text="📊 CA par catégorie",
-            command=self.afficher_ca_categorie,
-            **btn_style
-        ).pack(pady=5)
+        btn_type = QPushButton("📈 CA par type d'espace")
+        btn_type.setStyleSheet(base_style + "QPushButton { background-color: #3498db; }")
+        btn_type.clicked.connect(self.afficher_ca_par_type)
+        left_layout.addWidget(btn_type)
         
-        tk.Button(
-            left_frame,
-            text="📈 Taux de vente (Python)",
-            command=self.afficher_taux_vente,
-            bg='#9b59b6',
-            activebackground='#8e44ad',
-            **{k: v for k, v in btn_style.items() if k not in ['bg', 'activebackground']}
-        ).pack(pady=5)
+        btn_taux = QPushButton("📊 Taux d'occupation (Python)")
+        btn_taux.setStyleSheet(base_style + "QPushButton { background-color: #9b59b6; }")
+        btn_taux.clicked.connect(self.afficher_taux_occupation)
+        left_layout.addWidget(btn_taux)
         
-        tk.Button(
-            left_frame,
-            text="⭐ Indice fidélité (Python)",
-            command=self.afficher_indice_fidelite,
-            bg='#9b59b6',
-            activebackground='#8e44ad',
-            **{k: v for k, v in btn_style.items() if k not in ['bg', 'activebackground']}
-        ).pack(pady=5)
+        btn_popularite = QPushButton("⭐ Indice popularité (Python)")
+        btn_popularite.setStyleSheet(base_style + "QPushButton { background-color: #9b59b6; }")
+        btn_popularite.clicked.connect(self.afficher_indice_popularite)
+        left_layout.addWidget(btn_popularite)
         
         # Séparateur
-        tk.Frame(left_frame, height=2, bg='#bdc3c7').pack(fill='x', pady=15)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setStyleSheet("background-color: #bdc3c7;")
+        separator.setFixedHeight(2)
+        left_layout.addWidget(separator)
         
-        tk.Button(
-            left_frame,
-            text="➕ Ajouter une vente",
-            command=self.ouvrir_dialog_vente,
-            bg='#27ae60',
-            activebackground='#229954',
-            **{k: v for k, v in btn_style.items() if k not in ['bg', 'activebackground']}
-        ).pack(pady=5)
+        btn_ajouter = QPushButton("➕ Nouvelle réservation")
+        btn_ajouter.setStyleSheet(base_style + "QPushButton { background-color: #27ae60; }")
+        btn_ajouter.clicked.connect(self.ouvrir_dialog_reservation)
+        left_layout.addWidget(btn_ajouter)
         
-        tk.Button(
-            left_frame,
-            text="🔄 Réinitialiser BDD",
-            command=self.reinitialiser_base,
-            bg='#e74c3c',
-            activebackground='#c0392b',
-            **{k: v for k, v in btn_style.items() if k not in ['bg', 'activebackground']}
-        ).pack(pady=5)
+        btn_reinit = QPushButton("🔄 Réinitialiser BDD")
+        btn_reinit.setStyleSheet(base_style + "QPushButton { background-color: #e74c3c; }")
+        btn_reinit.clicked.connect(self.reinitialiser_base)
+        left_layout.addWidget(btn_reinit)
         
-        tk.Button(
-            left_frame,
-            text="❌ Quitter",
-            command=self.quit,
-            bg='#95a5a6',
-            activebackground='#7f8c8d',
-            **{k: v for k, v in btn_style.items() if k not in ['bg', 'activebackground']}
-        ).pack(pady=5)
+        btn_quitter = QPushButton("❌ Quitter")
+        btn_quitter.setStyleSheet(base_style + "QPushButton { background-color: #95a5a6; }")
+        btn_quitter.clicked.connect(self.close)
+        left_layout.addWidget(btn_quitter)
+        
+        left_layout.addStretch()
         
         # Colonne droite - Zone d'affichage
-        right_frame = tk.Frame(main_frame, bg='white', relief='solid', borderwidth=1)
-        right_frame.pack(side='right', fill='both', expand=True)
+        right_widget = QWidget()
+        right_widget.setStyleSheet("background-color: white; border: 1px solid #ddd;")
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Zone de texte scrollable
-        self.text_area = scrolledtext.ScrolledText(
-            right_frame,
-            font=('Courier New', 10),
-            bg='white',
-            wrap='none'
-        )
-        self.text_area.pack(fill='both', expand=True, padx=5, pady=5)
+        # Zone de texte
+        self.text_area = QTextEdit()
+        self.text_area.setReadOnly(True)
+        self.text_area.setFont(QFont("Courier New", 10))
+        self.text_area.setStyleSheet("color: black; background-color: white;")
+        right_layout.addWidget(self.text_area)
+        
+        # Ajouter les colonnes au layout principal
+        content_layout.addWidget(left_widget)
+        content_layout.addWidget(right_widget)
+        
+        main_layout.addWidget(content_widget)
         
         # Message d'accueil
         self.afficher_message_accueil()
     
     def afficher_message_accueil(self):
         """Affiche le message d'accueil"""
-        self.text_area.delete('1.0', tk.END)
+        self.text_area.clear()
         message = """
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║          BIENVENUE DANS L'APPLICATION DE GESTION             ║
-║                      DES VENTES                              ║
+║                  DE RÉSERVATIONS D'ESPACES                   ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
+
+🏢 Types d'espaces disponibles :
+   • Salles de réunion
+   • Bureaux temporaires
+   • Espaces événementiels
 
 📌 Sélectionnez une action dans le menu de gauche
 
 📊 Fonctionnalités disponibles :
-   • Consulter les ventes
-   • Voir les analyses et statistiques
-   • Ajouter de nouvelles ventes
+   • Consulter les réservations
+   • Analyser l'occupation et les statistiques
+   • Ajouter de nouvelles réservations
    • Gérer la base de données
 
 💡 Les boutons violets = Calculs effectués en Python
    Les autres = Requêtes SQL pures
 
         """
-        self.text_area.insert('1.0', message)
+        self.text_area.setPlainText(message)
     
-    def afficher_ventes(self):
-        """Affiche toutes les ventes"""
-        self.text_area.delete('1.0', tk.END)
-        ventes = service.get_all_ventes()
+    def afficher_reservations(self):
+        """Affiche toutes les réservations"""
+        self.text_area.clear()
+        reservations = service.get_all_reservations()
         
-        if not ventes:
-            self.text_area.insert('1.0', "\n❌ Aucune vente enregistrée\n")
+        if not reservations:
+            self.text_area.setText("Aucune reservation enregistree")
             return
         
-        output = "\n" + "="*120 + "\n"
-        output += "                                    LISTE DES VENTES\n"
-        output += "="*120 + "\n\n"
-        output += f"{'ID':<5} {'Date':<20} {'Client':<20} {'Produit':<25} {'Qté':<8} {'Montant':<12}\n"
-        output += "-"*120 + "\n"
+        output = "\n" + "="*130 + "\n"
+        output += "                                    LISTE DES RESERVATIONS\n"
+        output += "="*130 + "\n\n"
+        output += f"{'ID':<5} {'Date':<12} {'Heure':<8} {'Duree':<8} {'Client':<25} {'Espace':<25} {'Type':<22} {'Statut':<12} {'Montant':<10}\n"
+        output += "-"*130 + "\n"
         
-        for v in ventes:
-            date = v['date_vente'][:19]
-            output += f"{v['vente_id']:<5} {date:<20} {v['nom_client']:<20} {v['nom_produit']:<25} {v['quantite']:<8} {v['montant_total']:<12.2f} €\n"
+        for r in reservations:
+            output += f"{r['reservation_id']:<5} {r['date_reservation']:<12} {r['heure_debut']:<8} {r['duree_heures']:<8}h {r['client']:<25} {r['espace']:<25} {r['type_espace']:<22} {r['statut']:<12} {r['montant_total']:<10.2f} euros\n"
         
-        output += "="*120 + "\n"
-        output += f"\n📦 Total: {len(ventes)} vente(s)\n"
+        output += "="*130 + "\n"
+        output += f"\nTotal: {len(reservations)} reservation(s)\n"
         
-        self.text_area.insert('1.0', output)
+        self.text_area.setText(output)
     
     def afficher_indicateurs(self):
         """Affiche les indicateurs globaux"""
-        self.text_area.delete('1.0', tk.END)
+        self.text_area.clear()
         
-        ca = service.get_chiffre_affaires_total()
-        qte = service.get_quantite_totale_vendue()
-        nb = service.get_nombre_ventes()
-        moy = service.get_montant_moyen_vente()
+        stats = service.get_statistiques_globales()
         
         output = "\n" + "="*80 + "\n"
         output += "                        INDICATEURS GLOBAUX\n"
         output += "="*80 + "\n\n"
-        output += f"💰 Chiffre d'affaires total:  {ca:,.2f} €\n\n"
-        output += f"📦 Quantité totale vendue:    {qte} unités\n\n"
-        output += f"🛒 Nombre de ventes:          {nb}\n\n"
-        output += f"📊 Montant moyen par vente:   {moy:,.2f} €\n"
+        output += f"Chiffre d'affaires total:      {stats['ca_total'] or 0:.2f} euros\n\n"
+        output += f"Nombre de reservations:        {stats['nombre_reservations'] or 0}\n\n"
+        output += f"Heures totales reservees:      {stats['heures_totales'] or 0} heures\n\n"
+        output += f"Duree moyenne par reservation: {stats['duree_moyenne'] or 0:.2f} heures\n\n"
+        output += f"Montant moyen par reservation: {stats['montant_moyen'] or 0:.2f} euros\n"
         output += "\n" + "="*80 + "\n"
         
-        self.text_area.insert('1.0', output)
+        self.text_area.setText(output)
     
-    def afficher_classement_produits(self):
-        """Affiche le classement des produits"""
-        self.text_area.delete('1.0', tk.END)
-        produits = service.get_classement_produits()
+    def afficher_espaces_demandes(self):
+        """Affiche le classement des espaces les plus demandés"""
+        self.text_area.clear()
+        espaces = service.get_espaces_les_plus_demandes()
         
-        output = "\n" + "="*110 + "\n"
-        output += "                              CLASSEMENT DES PRODUITS\n"
-        output += "="*110 + "\n\n"
-        output += f"{'Produit':<30} {'Catégorie':<15} {'Ventes':<10} {'Quantité':<12} {'CA (€)':<15}\n"
-        output += "-"*110 + "\n"
+        output = "\n" + "="*120 + "\n"
+        output += "                              ESPACES LES PLUS DEMANDES\n"
+        output += "="*120 + "\n\n"
+        output += f"{'Espace':<30} {'Type':<22} {'Cap.':<6} {'Resa.':<8} {'Heures':<10} {'CA (euros)':<15} {'Moy (euros)':<12}\n"
+        output += "-"*120 + "\n"
         
-        for p in produits:
-            output += f"{p['produit']:<30} {p['categorie']:<15} {p['nombre_ventes']:<10} {p['quantite_vendue']:<12} {p['chiffre_affaires']:<15,.2f}\n"
+        for e in espaces:
+            output += f"{e['espace']:<30} {e['type']:<22} {e['capacite']:<6} {e['nombre_reservations']:<8} {e['heures_totales'] or 0:<10} {e['ca_total'] or 0:<15.2f} {e['montant_moyen'] or 0:<12.2f}\n"
         
-        output += "="*110 + "\n"
+        output += "="*120 + "\n"
         
-        self.text_area.insert('1.0', output)
+        self.text_area.setText(output)
     
-    def afficher_classement_clients(self):
-        """Affiche le classement des clients"""
-        self.text_area.delete('1.0', tk.END)
+    def afficher_meilleurs_clients(self):
+        """Affiche le classement des meilleurs clients"""
+        self.text_area.clear()
         clients = service.get_meilleurs_clients()
         
-        output = "\n" + "="*100 + "\n"
-        output += "                              CLASSEMENT DES CLIENTS\n"
-        output += "="*100 + "\n\n"
-        output += f"{'Client':<25} {'Ville':<15} {'Achats':<10} {'Total (€)':<15} {'Panier moy.':<15}\n"
-        output += "-"*100 + "\n"
+        output = "\n" + "="*115 + "\n"
+        output += "                              MEILLEURS CLIENTS\n"
+        output += "="*115 + "\n\n"
+        output += f"{'Client':<25} {'Entreprise':<20} {'Resa.':<8} {'Total (euros)':<15} {'Moy (euros)':<12} {'Heures':<10}\n"
+        output += "-"*115 + "\n"
         
         for c in clients:
-            output += f"{c['client']:<25} {c['ville']:<15} {c['nombre_achats']:<10} {c['montant_total']:<15,.2f} {c['panier_moyen']:<15,.2f}\n"
+            output += f"{c['client']:<25} {c['entreprise']:<20} {c['nombre_reservations']:<8} {c['montant_total']:<15.2f} {c['montant_moyen']:<12.2f} {c['heures_totales']:<10}\n"
         
-        output += "="*100 + "\n"
+        output += "="*115 + "\n"
         
-        self.text_area.insert('1.0', output)
+        self.text_area.setText(output)
     
-    def afficher_ca_categorie(self):
-        """Affiche le CA par catégorie"""
-        self.text_area.delete('1.0', tk.END)
-        categories = service.get_ca_par_categorie()
+    def afficher_volume_periode(self):
+        """Affiche le volume de réservations par période"""
+        self.text_area.clear()
+        periodes = service.get_reservations_par_periode(2026, 1)
         
-        output = "\n" + "="*95 + "\n"
-        output += "                           CHIFFRE D'AFFAIRES PAR CATÉGORIE\n"
-        output += "="*95 + "\n\n"
-        output += f"{'Catégorie':<20} {'Ventes':<10} {'Quantité':<12} {'CA (€)':<15} {'Moy. (€)':<15}\n"
-        output += "-"*95 + "\n"
+        output = "\n" + "="*90 + "\n"
+        output += "                     VOLUME DE RESERVATIONS PAR JOUR (JANVIER 2026)\n"
+        output += "="*90 + "\n\n"
+        output += f"{'Date':<15} {'Reservations':<15} {'Heures reservees':<20} {'CA du jour (euros)':<20}\n"
+        output += "-"*90 + "\n"
         
-        for cat in categories:
-            output += f"{cat['categorie']:<20} {cat['nombre_ventes']:<10} {cat['quantite_totale']:<12} {cat['chiffre_affaires']:<15,.2f} {cat['vente_moyenne']:<15,.2f}\n"
+        for p in periodes:
+            output += f"{p['date_reservation']:<15} {p['nombre_reservations']:<15} {p['heures_reservees']:<20} {p['ca_jour']:<20.2f}\n"
         
-        output += "="*95 + "\n"
+        output += "="*90 + "\n"
         
-        self.text_area.insert('1.0', output)
+        self.text_area.setText(output)
     
-    def afficher_taux_vente(self):
-        """Affiche les taux de vente (calcul Python)"""
-        self.text_area.delete('1.0', tk.END)
-        taux = service.calculer_taux_conversion_stock()
-        
-        output = "\n" + "="*100 + "\n"
-        output += "                   TAUX DE VENTE DES PRODUITS (Calcul Python)\n"
-        output += "="*100 + "\n\n"
-        output += f"{'Produit':<30} {'Stock init.':<12} {'Vendu':<10} {'Stock act.':<12} {'Taux %':<10}\n"
-        output += "-"*100 + "\n"
-        
-        for t in taux:
-            output += f"{t['produit']:<30} {t['stock_initial']:<12} {t['quantite_vendue']:<10} {t['stock_actuel']:<12} {t['taux_vente_pourcent']:<10.2f}%\n"
-        
-        output += "="*100 + "\n"
-        output += "\n💡 Calcul effectué en Python (pas en SQL)\n"
-        
-        self.text_area.insert('1.0', output)
-    
-    def afficher_indice_fidelite(self):
-        """Affiche l'indice de fidélité (calcul Python)"""
-        self.text_area.delete('1.0', tk.END)
-        indices = service.calculer_indice_fidelite_clients()
+    def afficher_ca_par_type(self):
+        """Affiche le CA par type d'espace"""
+        self.text_area.clear()
+        types = service.get_ca_par_type_espace()
         
         output = "\n" + "="*105 + "\n"
-        output += "                      INDICE DE FIDÉLITÉ CLIENTS (Calcul Python)\n"
+        output += "                           CHIFFRE D'AFFAIRES PAR TYPE D'ESPACE\n"
         output += "="*105 + "\n\n"
-        output += f"{'Client':<25} {'Achats':<10} {'Total (€)':<15} {'Panier moy.':<15} {'Indice':<12}\n"
+        output += f"{'Type':<25} {'Reservations':<15} {'Heures':<12} {'CA (euros)':<18} {'Montant moy (euros)':<15}\n"
         output += "-"*105 + "\n"
         
-        for idx in indices:
-            output += f"{idx['client']:<25} {idx['nombre_achats']:<10} {idx['montant_total']:<15,.2f} {idx['panier_moyen']:<15,.2f} {idx['indice_fidelite']:<12.2f}\n"
+        for t in types:
+            output += f"{t['type']:<25} {t['nombre_reservations'] or 0:<15} {t['heures_totales'] or 0:<12} {t['ca_total'] or 0:<18.2f} {t['montant_moyen'] or 0:<15.2f}\n"
         
         output += "="*105 + "\n"
-        output += "\n📐 Formule: Indice = (Nombre d'achats × 10) + (Panier moyen / 10)\n"
-        output += "💡 Calcul effectué en Python (pas en SQL)\n"
         
-        self.text_area.insert('1.0', output)
+        self.text_area.setText(output)
     
-    def ouvrir_dialog_vente(self):
-        """Ouvre une fenêtre pour ajouter une vente"""
-        dialog = tk.Toplevel(self)
-        dialog.title("Ajouter une vente")
-        dialog.geometry("400x300")
-        dialog.configure(bg='#ecf0f1')
+    def afficher_taux_occupation(self):
+        """Affiche les taux d'occupation (calcul Python)"""
+        self.text_area.clear()
+        taux = service.calculer_taux_occupation_espaces()
         
-        # Titre
-        tk.Label(
-            dialog,
-            text="➕ NOUVELLE VENTE",
-            font=('Arial', 14, 'bold'),
-            bg='#ecf0f1'
-        ).pack(pady=20)
+        output = "\n" + "="*110 + "\n"
+        output += "                   TAUX D'OCCUPATION DES ESPACES (Calcul Python)\n"
+        output += "="*110 + "\n\n"
+        output += f"{'Espace':<30} {'Type':<25} {'H. reservees':<15} {'H. dispo.':<12} {'Taux %':<10}\n"
+        output += "-"*110 + "\n"
         
-        # Frame pour les champs
-        form_frame = tk.Frame(dialog, bg='#ecf0f1')
-        form_frame.pack(pady=10)
+        for t in taux:
+            output += f"{t['espace']:<30} {t['type']:<25} {t['heures_reservees']:<15} {t['heures_disponibles']:<12} {t['taux_occupation_pourcent']:<10.2f}%\n"
         
-        # Client ID
-        tk.Label(form_frame, text="ID Client:", font=('Arial', 11), bg='#ecf0f1').grid(row=0, column=0, padx=10, pady=10, sticky='e')
-        client_entry = tk.Entry(form_frame, font=('Arial', 11), width=20)
-        client_entry.grid(row=0, column=1, padx=10, pady=10)
+        output += "="*110 + "\n"
+        output += "\nCalcul effectue en Python (pas en SQL)\n"
+        output += "Base: 10h/jour x 20 jours ouvrables = 200h disponibles\n"
         
-        # Produit ID
-        tk.Label(form_frame, text="ID Produit:", font=('Arial', 11), bg='#ecf0f1').grid(row=1, column=0, padx=10, pady=10, sticky='e')
-        produit_entry = tk.Entry(form_frame, font=('Arial', 11), width=20)
-        produit_entry.grid(row=1, column=1, padx=10, pady=10)
+        self.text_area.setText(output)
+    
+    def afficher_indice_popularite(self):
+        """Affiche l'indice de popularité (calcul Python)"""
+        self.text_area.clear()
+        indices = service.calculer_indice_popularite_espaces()
         
-        # Quantité
-        tk.Label(form_frame, text="Quantité:", font=('Arial', 11), bg='#ecf0f1').grid(row=2, column=0, padx=10, pady=10, sticky='e')
-        quantite_entry = tk.Entry(form_frame, font=('Arial', 11), width=20)
-        quantite_entry.grid(row=2, column=1, padx=10, pady=10)
+        output = "\n" + "="*115 + "\n"
+        output += "                      INDICE DE POPULARITE DES ESPACES (Calcul Python)\n"
+        output += "="*115 + "\n\n"
+        output += f"{'Espace':<30} {'Type':<25} {'Resa.':<10} {'CA (euros)':<15} {'Indice':<15}\n"
+        output += "-"*115 + "\n"
         
-        def valider_vente():
-            try:
-                client_id = int(client_entry.get())
-                produit_id = int(produit_entry.get())
-                quantite = int(quantite_entry.get())
-                
-                if quantite <= 0:
-                    messagebox.showerror("Erreur", "La quantité doit être supérieure à 0")
-                    return
-                
-                resultat = service.ajouter_vente(client_id, produit_id, quantite)
-                
-                if resultat['succes']:
-                    messagebox.showinfo(
-                        "Succès",
-                        f"{resultat['message']}\nMontant: {resultat['montant_total']:.2f} €"
-                    )
-                    dialog.destroy()
-                    self.afficher_ventes()
-                else:
-                    messagebox.showerror("Erreur", resultat['message'])
-                    
-            except ValueError:
-                messagebox.showerror("Erreur", "Veuillez entrer des nombres valides")
-            except Exception as e:
-                messagebox.showerror("Erreur", str(e))
+        for idx in indices:
+            output += f"{idx['espace']:<30} {idx['type']:<25} {idx['nombre_reservations']:<10} {idx['ca_total']:<15.2f} {idx['indice_popularite']:<15.2f}\n"
         
-        # Boutons
-        btn_frame = tk.Frame(dialog, bg='#ecf0f1')
-        btn_frame.pack(pady=20)
+        output += "="*115 + "\n"
+        output += "\nFormule: Indice = (Nombre de reservations x 10) + (CA / 100)\n"
+        output += "Calcul effectue en Python (pas en SQL)\n"
         
-        tk.Button(
-            btn_frame,
-            text="✅ Valider",
-            command=valider_vente,
-            font=('Arial', 11),
-            bg='#27ae60',
-            fg='white',
-            width=12,
-            cursor='hand2'
-        ).pack(side='left', padx=5)
-        
-        tk.Button(
-            btn_frame,
-            text="❌ Annuler",
-            command=dialog.destroy,
-            font=('Arial', 11),
-            bg='#e74c3c',
-            fg='white',
-            width=12,
-            cursor='hand2'
-        ).pack(side='left', padx=5)
+        self.text_area.setText(output)
+    
+    def ouvrir_dialog_reservation(self):
+        """Ouvre une fenêtre pour ajouter une réservation"""
+        dialog = DialogReservation(self)
+        if dialog.exec():
+            self.afficher_reservations()
     
     def reinitialiser_base(self):
         """Réinitialise la base de données"""
-        reponse = messagebox.askyesno(
+        reply = QMessageBox.question(
+            self,
             "Confirmation",
-            "⚠️ Voulez-vous vraiment réinitialiser la base de données ?\n\nToutes les données seront effacées et remplacées par les données de test."
+            "Voulez-vous vraiment réinitialiser la base de données ?\n\nToutes les données seront effacées et remplacées par les données de test.",
+            QMessageBox.Yes | QMessageBox.No
         )
         
-        if reponse:
+        if reply == QMessageBox.Yes:
             try:
                 database.init_database()
                 database.populate_sample_data()
-                messagebox.showinfo("Succès", "✅ Base de données réinitialisée avec succès!")
+                QMessageBox.information(self, "Succès", "Base de données réinitialisée avec succès!")
                 self.afficher_message_accueil()
             except Exception as e:
-                messagebox.showerror("Erreur", f"❌ Erreur: {e}")
+                QMessageBox.critical(self, "Erreur", f"Erreur: {e}")
+
+
+class DialogReservation(QDialog):
+    """Dialogue pour ajouter une réservation"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Nouvelle réservation")
+        self.setFixedSize(450, 350)
+        
+        layout = QVBoxLayout(self)
+        
+        # Titre
+        title = QLabel("➕ NOUVELLE RÉSERVATION")
+        title.setAlignment(Qt.AlignCenter)
+        title.setFont(QFont("Arial", 14, QFont.Bold))
+        layout.addWidget(title)
+        
+        # Formulaire
+        form_widget = QWidget()
+        form_layout = QVBoxLayout(form_widget)
+        
+        # Client ID
+        client_layout = QHBoxLayout()
+        client_layout.addWidget(QLabel("ID Client:"))
+        self.client_entry = QLineEdit()
+        client_layout.addWidget(self.client_entry)
+        form_layout.addLayout(client_layout)
+        
+        # Espace ID
+        espace_layout = QHBoxLayout()
+        espace_layout.addWidget(QLabel("ID Espace:"))
+        self.espace_entry = QLineEdit()
+        espace_layout.addWidget(self.espace_entry)
+        form_layout.addLayout(espace_layout)
+        
+        # Date
+        date_layout = QHBoxLayout()
+        date_layout.addWidget(QLabel("Date (AAAA-MM-JJ):"))
+        self.date_entry = QLineEdit()
+        self.date_entry.setPlaceholderText("2026-01-30")
+        date_layout.addWidget(self.date_entry)
+        form_layout.addLayout(date_layout)
+        
+        # Heure
+        heure_layout = QHBoxLayout()
+        heure_layout.addWidget(QLabel("Heure (HH:MM):"))
+        self.heure_entry = QLineEdit()
+        self.heure_entry.setPlaceholderText("09:00")
+        heure_layout.addWidget(self.heure_entry)
+        form_layout.addLayout(heure_layout)
+        
+        # Durée
+        duree_layout = QHBoxLayout()
+        duree_layout.addWidget(QLabel("Durée (heures):"))
+        self.duree_entry = QLineEdit()
+        duree_layout.addWidget(self.duree_entry)
+        form_layout.addLayout(duree_layout)
+        
+        layout.addWidget(form_widget)
+        
+        # Boutons
+        btn_layout = QHBoxLayout()
+        
+        btn_valider = QPushButton("✅ Valider")
+        btn_valider.setStyleSheet("background-color: #27ae60; color: white; padding: 10px; font-size: 11pt;")
+        btn_valider.clicked.connect(self.valider_reservation)
+        btn_layout.addWidget(btn_valider)
+        
+        btn_annuler = QPushButton("❌ Annuler")
+        btn_annuler.setStyleSheet("background-color: #e74c3c; color: white; padding: 10px; font-size: 11pt;")
+        btn_annuler.clicked.connect(self.reject)
+        btn_layout.addWidget(btn_annuler)
+        
+        layout.addLayout(btn_layout)
+    
+    def valider_reservation(self):
+        """Valide et enregistre la réservation"""
+        try:
+            client_id = int(self.client_entry.text())
+            espace_id = int(self.espace_entry.text())
+            date_reservation = self.date_entry.text()
+            heure_debut = self.heure_entry.text()
+            duree_heures = int(self.duree_entry.text())
+            
+            if duree_heures <= 0:
+                QMessageBox.warning(self, "Erreur", "La durée doit être supérieure à 0")
+                return
+            
+            resultat = service.ajouter_reservation(client_id, espace_id, date_reservation, heure_debut, duree_heures)
+            
+            if resultat['succes']:
+                QMessageBox.information(
+                    self,
+                    "Succès",
+                    f"{resultat['message']}\nMontant: {resultat['montant_total']:.2f} €"
+                )
+                self.accept()
+            else:
+                QMessageBox.critical(self, "Erreur", resultat['message'])
+                
+        except ValueError:
+            QMessageBox.warning(self, "Erreur", "Veuillez entrer des valeurs valides")
+        except Exception as e:
+            QMessageBox.critical(self, "Erreur", str(e))
 
 
 def main():
     """Fonction principale"""
-    app = Application()
-    app.mainloop()
+    app = QApplication(sys.argv)
+    window = Application()
+    window.show()
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
