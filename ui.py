@@ -7,13 +7,12 @@ import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QTextEdit, QLabel, QDialog, QLineEdit, QMessageBox,
-    QFrame, QComboBox
+    QFrame
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 import service
 import database
-import os
 
 
 class Application(QMainWindow):

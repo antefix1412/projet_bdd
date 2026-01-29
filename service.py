@@ -39,26 +39,17 @@ def get_all_reservations():
     return [dict(row) for row in results]
 
 
-def get_espaces_disponibles(type_espace=None):
-    """Liste des espaces avec filtre optionnel par type"""
+def get_espaces_disponibles():
+    """Liste des espaces"""
     conn = database.get_connection()
     cursor = conn.cursor()
     
-    if type_espace:
-        query = """
-            SELECT espace_id, nom, type, capacite, tarif_horaire
-            FROM Espaces
-            WHERE type = ?
-            ORDER BY nom
-        """
-        cursor.execute(query, (type_espace,))
-    else:
-        query = """
-            SELECT espace_id, nom, type, capacite, tarif_horaire
-            FROM Espaces
-            ORDER BY type, nom
-        """
-        cursor.execute(query)
+    query = """
+        SELECT espace_id, nom, type, capacite, tarif_horaire
+        FROM Espaces
+        ORDER BY type, nom
+    """
+    cursor.execute(query)
     
     results = cursor.fetchall()
     conn.close()
@@ -109,60 +100,6 @@ def ajouter_reservation(client_id, espace_id, date_reservation, heure_debut, dur
 # ============================================================================
 # NIVEAU 2 - JOIN, Agrégats (COUNT, SUM, AVG)
 # ============================================================================
-
-def get_chiffre_affaires_total():
-    """Calcule le chiffre d'affaires total (SUM)"""
-    conn = database.get_connection()
-    cursor = conn.cursor()
-    
-    query = """
-        SELECT COALESCE(SUM(montant_total), 0) AS ca_total
-        FROM Reservations
-        WHERE statut != 'Annulée'
-    """
-    
-    cursor.execute(query)
-    result = cursor.fetchone()
-    conn.close()
-    
-    return result['ca_total']
-
-
-def get_nombre_reservations():
-    """Compte le nombre total de réservations (COUNT)"""
-    conn = database.get_connection()
-    cursor = conn.cursor()
-    
-    query = """
-        SELECT COUNT(*) AS total
-        FROM Reservations
-        WHERE statut != 'Annulée'
-    """
-    
-    cursor.execute(query)
-    result = cursor.fetchone()
-    conn.close()
-    
-    return result['total']
-
-
-def get_duree_moyenne_reservations():
-    """Calcule la durée moyenne des réservations (AVG)"""
-    conn = database.get_connection()
-    cursor = conn.cursor()
-    
-    query = """
-        SELECT AVG(duree_heures) AS duree_moyenne
-        FROM Reservations
-        WHERE statut != 'Annulée'
-    """
-    
-    cursor.execute(query)
-    result = cursor.fetchone()
-    conn.close()
-    
-    return result['duree_moyenne'] or 0
-
 
 def get_statistiques_globales():
     """Retourne toutes les statistiques en une seule requête"""
